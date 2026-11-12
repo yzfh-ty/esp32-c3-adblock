@@ -89,6 +89,8 @@ python3 hardware/esp8266-enclosure.py --board-w 30 --board-l 58 --out case.stl
 
 网页烧录入口在 `docs/index.html`。烧录组件已固定为本地中文版本，串口帮助、安装确认、擦除提示、进度和操作按钮均为中文；维护方式见 [`docs/vendor/esp-web-tools/README.md`](docs/vendor/esp-web-tools/README.md)。更新网页后刷新即可，无需重新烧录设备。浏览器自己的串口选择窗口使用浏览器设置的语言。
 
+网页已内置 **ESP32-C3 / 4 MB Flash 中文默认固件**及 138,121 条域名的拦截列表。点击“烧录默认固件”，选择串口，再点击“安装 C3 AdBlocker”并确认即可，无需编译或手动选择 `.bin` 文件。默认镜像使用 `src/secrets.example.h` 构建，不含个人 WiFi 凭据，烧录后通过热点配网。管理用户名为 `admin`，管理密码为 `CHANGE_ME_WEB_PASSWORD`，网络 OTA 密码为 `CHANGE_ME_OTA_PASSWORD`；这些是公开默认值，需要自定义密码时请按下方流程自行编译。
+
 不能直接双击 HTML 文件（`file://`）进行烧录。在项目目录运行以下命令，然后用桌面版 Chrome / Edge 打开 <http://127.0.0.1:8000/>。使用期间保持终端打开，结束后按 `Ctrl+C` 关闭服务。
 
 ```powershell
