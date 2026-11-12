@@ -33,12 +33,12 @@
 <body>
 <div class="wrap">
   <h1>🛡️ <span class="g">C3 AdBlocker</span></h1>
-  <p class="sub">一台 <span class="price">$2</span> 的 ESP32-C3 全网络 DNS 广告拦截器——138,121 条域名，无需 PSRAM。直接在这里烧录，无需工具链。</p>
+  <p class="sub">一台 <span class="price">$2</span> 的 ESP32-C3 全网络 DNS 广告拦截器——222,798 条域名，无需 PSRAM。直接在这里烧录，无需工具链。</p>
 
   <div class="card" style="text-align:center">
     <p style="margin-top:0">已内置 ESP32-C3 中文默认固件和拦截列表，无需选择固件文件。</p>
     <p class="note">适用于 4 MB Flash 的 ESP32-C3，包括 C3 SuperMini。连接开发板后，选择串口并确认安装即可。</p>
-    <esp-web-install-button manifest="./manifest.json?v=1.0.0-zh.2">
+    <esp-web-install-button manifest="./manifest.json?v=1.0.0-zh.3">
       <button slot="activate" disabled style="font:600 17px system-ui;padding:14px 26px;border:0;border-radius:8px;background:#3fb950;color:#000">⚡ 烧录默认固件</button>
       <span slot="unsupported" class="unsupported">你的浏览器无法烧录——请在桌面上使用 <b>Chrome</b> 或 <b>Edge</b>。</span>
       <span slot="not-allowed" class="unsupported">请通过 HTTPS 或本机 localhost 地址打开此页面，才能使用串口烧录。</span>
@@ -53,6 +53,7 @@
       <span class="flag">Chrome / Edge · 桌面版</span>
       <span class="flag">中文默认固件</span>
       <span class="flag">已内置拦截列表</span>
+      <span class="flag">国内增强规则</span>
     </div>
   </div>
 
@@ -60,11 +61,13 @@
     <b>会发生什么</b>
     <ol>
       <li>点击 <b>烧录默认固件</b>，选择你的 ESP32-C3 串口，再点击 <b>安装 C3 AdBlocker</b> 并按提示确认。</li>
-      <li>网页会自动加载并烧录中文固件和内置拦截列表（138,121 条域名）。勾选擦除设备数据会清除已有配置，安装期间请保持 USB 连接和网页打开。</li>
+      <li>网页会自动加载并烧录中文固件和内置拦截列表（222,798 条域名）。勾选擦除设备数据会清除已有配置，安装期间请保持 USB 连接和网页打开。</li>
       <li>重启后，它会创建一个名为 <code>C3-AdBlock-XXXX</code> 的 WiFi 网络——用手机连上它，选择你的 WiFi，输入密码。</li>
       <li>把它设为你路由器的备用 DNS（或逐设备设置），广告就会被全网拦截。仪表盘在 <code>c3adblock.local</code>。</li>
     </ol>
     <p class="note">这个固件没有内置任何 WiFi 凭据——你在设备上进行私密设置。</p>
+    <p class="note">默认规则：StevenBlack Base + HaGeZi Light + anti-AD 纯域名列表，补充中文区广告和追踪域名。</p>
+    <p class="note">已安装设备可<a href="./blocklist.bin?v=1.0.0-zh.3" download="blocklist.bin">下载新版规则</a>，在设备管理页面的“拦截列表 → 上传”中更新，无需重新刷写固件。</p>
     <details class="note">
       <summary>默认固件的管理登录信息</summary>
       <p>管理用户名为 <code>admin</code>，管理密码为 <code>123456</code>，网络 OTA 密码为 <code>123456</code>。这些是公开默认值，设备会提示正在使用默认密码；需要自定义密码时，请修改 <code>src/secrets.h</code> 后重新编译。</p>

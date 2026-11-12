@@ -8,8 +8,8 @@ HASH_BYTES 必须与固件（src/main.cpp）一致。5 字节（40 位）在最�
 
 用法：build_blocklist.py [out.bin] [src ...]
   src = 本地文件或 URL。不指定时，下载一份均衡的日常驱动列表
-  （StevenBlack base + Hagezi Light）约 10 万条：拦截广告/追踪/恶意软件，
-  但保持 WhatsApp/Instagram/社交/通讯可用。
+  （StevenBlack base + Hagezi Light + anti-AD 纯域名列表）约 22 万条，
+  在通用广告/追踪/恶意软件拦截的基础上补充中文区规则。
 
   想要激进的“测试极限”构建（约 50 万，也会拦截社交/通讯）：
     build_blocklist.py blocklist.bin \\
@@ -26,13 +26,14 @@ FNV_PRIME  = 0x100000001b3
 U64 = (1 << 64) - 1
 
 # Daily driver that FITS alongside dual-OTA firmware slots (~250k domain budget):
-# ads + trackers + malware, WhatsApp/social keep working. ~100k entries / 0.5 MB
+# General ads/trackers/malware plus anti-AD's Chinese-region coverage.
+# Around 220k entries / 1.1 MB; the weekly workflow checks the size before release.
 # (Hagezi's wildcard lists drop subdomains the firmware's parent-matching already covers).
-# Want more? swap light-onlydomains.txt -> pro-onlydomains.txt is 370k and ONLY fits the
-# single-app (no-OTA) partition table.
+# Keep the combined list within the filesystem budget when changing sources.
 DEFAULT_SOURCES = [
     'https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts',            # base: ads + malware
     'https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/light-onlydomains.txt',  # Hagezi Light (wildcard = domain + subdomains)
+    'https://raw.githubusercontent.com/privacy-protection-tools/anti-AD/master/anti-ad-domains.txt',  # Chinese-region DNS rules; no URL/cosmetic syntax
 ]
 
 # ||domain^  or  @@||domain^  optionally followed by $modifiers

@@ -1,7 +1,7 @@
 name: blocklist
 
 # Rebuilds the default blocklist weekly and publishes it at a stable URL:
-#   https://github.com/M-Abozaid/esp32-c3-adblock/releases/download/blocklist/blocklist.bin
+#   https://github.com/<owner>/<repository>/releases/download/blocklist/blocklist.bin
 # Point a device's "Remote auto-update" at that URL and it stays current on its own.
 on:
   schedule:
@@ -33,7 +33,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           entries=$(( $(stat -c%s blocklist.bin) / 5 ))
-          notes="Auto-built $(date -u +%F) — ${entries} entries (StevenBlack base + Hagezi Light).
+          notes="Auto-built $(date -u +%F) — ${entries} entries (StevenBlack base + Hagezi Light + anti-AD domains).
 
           Set this as the device's Remote auto-update URL:
           https://github.com/${{ github.repository }}/releases/download/blocklist/blocklist.bin"

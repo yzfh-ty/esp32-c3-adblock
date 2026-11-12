@@ -89,7 +89,9 @@ python3 hardware/esp8266-enclosure.py --board-w 30 --board-l 58 --out case.stl
 
 网页烧录入口在 `docs/index.html`。烧录组件已固定为本地中文版本，串口帮助、安装确认、擦除提示、进度和操作按钮均为中文；维护方式见 [`docs/vendor/esp-web-tools/README.md`](docs/vendor/esp-web-tools/README.md)。更新网页后刷新即可，无需重新烧录设备。浏览器自己的串口选择窗口使用浏览器设置的语言。
 
-网页已内置 **ESP32-C3 / 4 MB Flash 中文默认固件**及 138,121 条域名的拦截列表。点击“烧录默认固件”，选择串口，再点击“安装 C3 AdBlocker”并确认即可，无需编译或手动选择 `.bin` 文件。默认镜像使用 `src/secrets.example.h` 构建，不含个人 WiFi 凭据，烧录后通过热点配网。管理用户名为 `admin`，管理密码为 `123456`，网络 OTA 密码为 `123456`；这些是公开默认值，需要自定义密码时请按下方流程自行编译。
+网页已内置 **ESP32-C3 / 4 MB Flash 中文默认固件**及 222,798 条域名的国内增强拦截列表（StevenBlack Base + HaGeZi Light + anti-AD 纯域名列表）。点击“烧录默认固件”，选择串口，再点击“安装 C3 AdBlocker”并确认即可，无需编译或手动选择 `.bin` 文件。默认镜像使用 `src/secrets.example.h` 构建，不含个人 WiFi 凭据，烧录后通过热点配网。管理用户名为 `admin`，管理密码为 `123456`，网络 OTA 密码为 `123456`；这些是公开默认值，需要自定义密码时请按下方流程自行编译。
+
+已安装设备可下载 [`docs/blocklist.bin`](docs/blocklist.bin)，在设备管理页面的“拦截列表 → 上传”中更新规则，无需重刷固件。默认烧录镜像中的列表与该文件一致。
 
 不能直接双击 HTML 文件（`file://`）进行烧录。在项目目录运行以下命令，然后用桌面版 Chrome / Edge 打开 <http://127.0.0.1:8000/>。使用期间保持终端打开，结束后按 `Ctrl+C` 关闭服务。
 
@@ -112,8 +114,8 @@ python -m http.server 8000 --bind 127.0.0.1 --directory docs
 cp src/secrets.example.h src/secrets.h
 #    then edit src/secrets.h
 
-# 2. 构建拦截列表哈希表（默认 = StevenBlack base + Hagezi Light，
-#    约 10 万条，WhatsApp/社交应用不受影响）
+# 2. 构建拦截列表哈希表（默认 = StevenBlack base + Hagezi Light + anti-AD，
+#    约 22 万条，补充中文区规则；任何来源下载失败都会停止）
 python3 tools/build_blocklist.py data/blocklist.bin
 
 # 3. 烧录固件 + 拦截列表文件系统（唯一的一次 USB 烧录）
@@ -145,8 +147,9 @@ pio device monitor          # -> http://c3adblock.local
 
 仪表盘 **http://c3adblock.local** 就能完成所有操作：
 
-- **拦截列表** — 把新构建的 `blocklist.bin` 拖入 *拦截列表 → 上传*，或设置 *远程自动更新* 的 URL，设备会按计划拉取预生成的 `blocklist.bin`。GitHub Actions **每周一**自动重建一份新的默认列表并发布到稳定 URL，因此粘贴一次即可让设备自行保持最新：
-  `https://github.com/M-Abozaid/esp32-c3-adblock/releases/download/blocklist/blocklist.bin`
+- **拦截列表** — 把新构建的 `blocklist.bin` 拖入 *拦截列表 → 上传*，或设置 *远程自动更新* 的 URL，设备会按计划拉取预生成的 `blocklist.bin`。与本仓库默认烧录包保持一致的国内增强规则地址为：
+  `https://yzfh-ty.github.io/esp32-c3-adblock/blocklist.bin`
+  仓库还提供每周一构建默认列表的 GitHub Actions 工作流（fork 后需启用）；其发布地址为 `https://github.com/yzfh-ty/esp32-c3-adblock/releases/download/blocklist/blocklist.bin`。
 - **固件** — 在 *固件 → OTA 更新* 上传 `.pio/build/c3/firmware.bin`；设备会校验并重启进入新镜像。或者从命令行通过 WiFi 推送：
   ```bash
   pio run -t upload --upload-port c3adblock.local --upload-protocol espota

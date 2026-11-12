@@ -1,6 +1,6 @@
 {
   "name": "C3 AdBlocker",
-  "version": "1.0.0-zh.2",
+  "version": "1.0.0-zh.3",
   "new_install_prompt_erase": true,
   "new_install_improv_wait_time": 0,
   "builds": [
@@ -11,7 +11,7 @@
         { "path": "partitions.bin", "offset": 32768 },
         { "path": "boot_app0.bin", "offset": 57344 },
         { "path": "firmware.bin?v=1.0.0-zh.2", "offset": 65536 },
-        { "path": "littlefs.bin", "offset": 2818048 }
+        { "path": "littlefs.bin?v=1.0.0-zh.3", "offset": 2818048 }
       ]
     }
   ]
