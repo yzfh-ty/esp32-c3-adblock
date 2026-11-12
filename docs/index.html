@@ -1,11 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>C3 AdBlocker — 在浏览器里直接烧录</title>
 <meta name="description" content="直接从浏览器烧录这台 2 美元的 ESP32-C3 网络广告拦截器。无需工具链，无需 PlatformIO。">
-<script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
@@ -26,6 +25,9 @@
   code { background: #21262d; padding: 1px 6px; border-radius: 5px; }
   .flags { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
   .flag { background: #21262d; border-radius: 6px; padding: 4px 10px; font-size: 13px; color: #8b949e; }
+  button:disabled { opacity: 0.65; cursor: not-allowed; }
+  #local-help { text-align: left; }
+  #local-help pre { overflow-x: auto; padding: 12px; background: #0d1117; border-radius: 6px; }
 </style>
 </head>
 <body>
@@ -36,10 +38,16 @@
   <div class="card" style="text-align:center">
     <p style="margin-top:0">把你的 ESP32-C3 插入这台电脑，然后：</p>
     <esp-web-install-button manifest="./manifest.json">
-      <button slot="activate" style="font:600 17px system-ui;padding:14px 26px;border:0;border-radius:8px;background:#3fb950;color:#000;cursor:pointer">⚡ 连接并安装</button>
+      <button slot="activate" disabled style="font:600 17px system-ui;padding:14px 26px;border:0;border-radius:8px;background:#3fb950;color:#000">⚡ 连接并安装</button>
       <span slot="unsupported" class="unsupported">你的浏览器无法烧录——请在桌面上使用 <b>Chrome</b> 或 <b>Edge</b>。</span>
-      <span slot="not-allowed" class="unsupported">你需要允许访问串口。</span>
+      <span slot="not-allowed" class="unsupported">请通过 HTTPS 或本机 localhost 地址打开此页面，才能使用串口烧录。</span>
     </esp-web-install-button>
+    <p id="installer-status" class="note" role="status">正在加载烧录组件…</p>
+    <div id="local-help" class="note" hidden>
+      <p>请在项目目录打开 PowerShell，运行：</p>
+      <pre><code>python -m http.server 8000 --bind 127.0.0.1 --directory docs</code></pre>
+      <p>然后打开 <a href="http://127.0.0.1:8000/">本机烧录页面</a>，使用期间保持终端打开。结束后在终端按 Ctrl+C 关闭服务。</p>
+    </div>
     <div class="flags">
       <span class="flag">Chrome / Edge · 桌面版</span>
       <span class="flag">约 30 秒</span>
@@ -52,7 +60,7 @@
     <ol>
       <li>点击 <b>连接并安装</b>，然后选择你的 ESP32-C3 的串口。</li>
       <li>它会烧录固件 + 一个 14.1 万域名的拦截列表（约 30 秒）。</li>
-      <li>重启后，它会创建一个名为 <code>C3-AdBlock-XXXX</code> 的 WiFi 网络——用手机连上它，选择你的 WiFi，输入password。</li>
+      <li>重启后，它会创建一个名为 <code>C3-AdBlock-XXXX</code> 的 WiFi 网络——用手机连上它，选择你的 WiFi，输入密码。</li>
       <li>把它设为你路由器的备用 DNS（或逐设备设置），广告就会被全网拦截。仪表盘在 <code>c3adblock.local</code>。</li>
     </ol>
     <p class="note">这个固件没有内置任何 WiFi 凭据——你在设备上进行私密设置。</p>
@@ -65,5 +73,24 @@
     &nbsp;·&nbsp; 源码 + 文档：<a href="https://github.com/M-Abozaid/esp32-c3-adblock">GitHub</a>（MIT）。
   </p>
 </div>
+<script>
+  const activateButton = document.querySelector('button[slot="activate"]');
+  const installerStatus = document.getElementById('installer-status');
+  if (location.protocol === 'file:') {
+    installerStatus.textContent = '直接打开 HTML 文件无法使用网页烧录，请通过本机 localhost 服务打开。';
+    document.getElementById('local-help').hidden = false;
+  } else if (!window.isSecureContext) {
+    installerStatus.textContent = '请通过 HTTPS 或本机 localhost 地址打开此页面，才能使用串口烧录。';
+  } else if (!('serial' in navigator)) {
+    installerStatus.textContent = '当前浏览器不支持串口烧录，请使用桌面版 Chrome 或 Edge。';
+  } else {
+    import('./vendor/esp-web-tools/install-button.js').then(() => {
+      activateButton.disabled = false;
+      installerStatus.hidden = true;
+    }).catch(() => {
+      installerStatus.textContent = '烧录组件加载失败，请确认网页文件完整，然后刷新重试。';
+    });
+  }
+</script>
 </body>
 </html>

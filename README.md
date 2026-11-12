@@ -87,6 +87,14 @@ python3 hardware/esp8266-enclosure.py --board-w 30 --board-l 58 --out case.stl
 
 ## 构建与烧录（PlatformIO）
 
+网页烧录入口在 `docs/index.html`。烧录组件已固定为本地中文版本，串口帮助、安装确认、擦除提示、进度和操作按钮均为中文；维护方式见 [`docs/vendor/esp-web-tools/README.md`](docs/vendor/esp-web-tools/README.md)。更新网页后刷新即可，无需重新烧录设备。浏览器自己的串口选择窗口使用浏览器设置的语言。
+
+不能直接双击 HTML 文件（`file://`）进行烧录。在项目目录运行以下命令，然后用桌面版 Chrome / Edge 打开 <http://127.0.0.1:8000/>。使用期间保持终端打开，结束后按 `Ctrl+C` 关闭服务。
+
+```powershell
+python -m http.server 8000 --bind 127.0.0.1 --directory docs
+```
+
 只需一次 USB 烧录即可启动——之后**固件和拦截列表都能通过 WiFi 更新**（见下文）。
 
 > ⚠️ 请使用**较新的 PlatformIO**——VSCode PlatformIO 扩展自带的核心，或在虚拟环境中 `pip install -U platformio`。发行版/apt 的 `platformio` 包（例如 4.3.4）太旧，会报 `AttributeError: ... 'resultcallback'`（issue #4）。平台版本已锁定在 `platformio.ini`（更新版本构建的 C3 镜像对 OTA 分区来说过大了）。
