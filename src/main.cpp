@@ -694,16 +694,16 @@ static void handlePortalRoot() {
     "<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'>"
     "<title>C3 AdBlock setup</title>"
     "<body style='font:16px system-ui,sans-serif;max-width:420px;margin:36px auto;padding:0 16px;background:#0d1117;color:#c9d1d9'>"
-    "<h2>&#128737; C3 AdBlock &mdash; WiFi setup</h2>"
-    "<p style='color:#8b949e'>Pick your network and enter its password. The device restarts and joins it.</p>"
+    "<h2>&#128737; C3 AdBlock &mdash; WiFi 配置</h2>"
+    "<p style='color:#8b949e'>选择您的网络并输入密码。设备将重启并连接该网络。</p>"
     "<form method=POST action=/wifisave>"
     // A real <select> is usable on every phone; the datalist this used to be
     // renders an affordance in several in-app browsers but no list, so picking
     // a network looked impossible. Typing the name still covers hidden APs.
     "<select name=s style='width:100%;box-sizing:border-box;padding:11px;margin:6px 0;border-radius:6px;border:1px solid #30363d;background:#161b22;color:#c9d1d9'>" + portalOpts + "</select>"
     "<input name=s2 placeholder='or type the WiFi name' style='width:100%;box-sizing:border-box;padding:11px;margin:6px 0;border-radius:6px;border:1px solid #30363d;background:#161b22;color:#c9d1d9'>"
-    "<input name=p type=password placeholder='Password' style='width:100%;box-sizing:border-box;padding:11px;margin:6px 0;border-radius:6px;border:1px solid #30363d;background:#161b22;color:#c9d1d9'>"
-    "<button style='width:100%;padding:12px;margin-top:8px;border-radius:6px;border:0;background:#3fb950;color:#000;font-weight:600;cursor:pointer'>Connect</button>"
+    "<input name=p type=password placeholder='密码' style='width:100%;box-sizing:border-box;padding:11px;margin:6px 0;border-radius:6px;border:1px solid #30363d;background:#161b22;color:#c9d1d9'>"
+    "<button style='width:100%;padding:12px;margin-top:8px;border-radius:6px;border:0;background:#3fb950;color:#000;font-weight:600;cursor:pointer'>连接</button>"
     "</form></body>";
   web.send(200, "text/html", html);
 }
@@ -714,8 +714,8 @@ static void handleWifiSave() {
   if (!ss.length()) { web.send(400, "text/plain", "missing WiFi name"); return; }
   prefs.begin("wifi", false); prefs.putString("ssid", ss); prefs.putString("pass", pw); prefs.end();
   web.send(200, "text/html", "<!doctype html><meta charset=utf-8><body style='font:16px system-ui;text-align:center;margin-top:60px'>"
-                             "&#9989; Saved. Restarting and joining <b>" + htmlEscape(ss) + "</b>&hellip;<br><br>"
-                             "Reconnect your phone to your normal WiFi, then find the box at <b>c3adblock.local</b>.</body>");
+                             "&#9989; 已保存。正在重启并连接 <b>" + htmlEscape(ss) + "</b>&hellip;<br><br>"
+                             "请将手机重新连回您的正常 WiFi，然后访问 <b>c3adblock.local</b>。</body>");
   delay(900); ESP.restart();
 }
 // Never returns — blocks in the portal loop until creds are saved (then reboots).

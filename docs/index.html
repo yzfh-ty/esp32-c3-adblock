@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>C3 AdBlocker — flash it in your browser</title>
-<meta name="description" content="Flash the $2 ESP32-C3 network ad-blocker straight from your browser. No toolchain, no PlatformIO.">
+<title>C3 AdBlocker — 在浏览器里直接烧录</title>
+<meta name="description" content="直接从浏览器烧录这台 2 美元的 ESP32-C3 网络广告拦截器。无需工具链，无需 PlatformIO。">
 <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
 <style>
   :root { color-scheme: dark; }
@@ -31,38 +31,38 @@
 <body>
 <div class="wrap">
   <h1>🛡️ <span class="g">C3 AdBlocker</span></h1>
-  <p class="sub">A network-wide DNS ad-blocker on a <span class="price">$2</span> ESP32-C3 — 141,000+ domains, no PSRAM. Flash it right here, no toolchain needed.</p>
+  <p class="sub">一台 <span class="price">$2</span> 的 ESP32-C3 全网络 DNS 广告拦截器——141,000+ 域名，无需 PSRAM。直接在这里烧录，无需工具链。</p>
 
   <div class="card" style="text-align:center">
-    <p style="margin-top:0">Plug your ESP32-C3 into this computer, then:</p>
+    <p style="margin-top:0">把你的 ESP32-C3 插入这台电脑，然后：</p>
     <esp-web-install-button manifest="./manifest.json">
-      <button slot="activate" style="font:600 17px system-ui;padding:14px 26px;border:0;border-radius:8px;background:#3fb950;color:#000;cursor:pointer">⚡ Connect &amp; Install</button>
-      <span slot="unsupported" class="unsupported">Your browser can't flash — use <b>Chrome</b> or <b>Edge</b> on a desktop.</span>
-      <span slot="not-allowed" class="unsupported">You need to allow the serial port.</span>
+      <button slot="activate" style="font:600 17px system-ui;padding:14px 26px;border:0;border-radius:8px;background:#3fb950;color:#000;cursor:pointer">⚡ 连接并安装</button>
+      <span slot="unsupported" class="unsupported">你的浏览器无法烧录——请在桌面上使用 <b>Chrome</b> 或 <b>Edge</b>。</span>
+      <span slot="not-allowed" class="unsupported">你需要允许访问串口。</span>
     </esp-web-install-button>
     <div class="flags">
-      <span class="flag">Chrome / Edge · desktop</span>
-      <span class="flag">~30 seconds</span>
-      <span class="flag">blocklist included</span>
+      <span class="flag">Chrome / Edge · 桌面版</span>
+      <span class="flag">约 30 秒</span>
+      <span class="flag">已内置拦截列表</span>
     </div>
   </div>
 
   <div class="card">
-    <b>What happens</b>
+    <b>会发生什么</b>
     <ol>
-      <li>Click <b>Connect &amp; Install</b> and pick your ESP32-C3's serial port.</li>
-      <li>It flashes the firmware + a 141k-domain blocklist (~30s).</li>
-      <li>After it reboots, it makes a WiFi network called <code>C3-AdBlock-XXXX</code> — join it from your phone, pick your WiFi, type the password.</li>
-      <li>Set it as your router's secondary DNS (or per-device), and ads are blocked network-wide. Dashboard at <code>c3adblock.local</code>.</li>
+      <li>点击 <b>连接并安装</b>，然后选择你的 ESP32-C3 的串口。</li>
+      <li>它会烧录固件 + 一个 14.1 万域名的拦截列表（约 30 秒）。</li>
+      <li>重启后，它会创建一个名为 <code>C3-AdBlock-XXXX</code> 的 WiFi 网络——用手机连上它，选择你的 WiFi，输入password。</li>
+      <li>把它设为你路由器的备用 DNS（或逐设备设置），广告就会被全网拦截。仪表盘在 <code>c3adblock.local</code>。</li>
     </ol>
-    <p class="note">No WiFi credentials are baked into this build — you set them on-device, privately.</p>
+    <p class="note">这个固件没有内置任何 WiFi 凭据——你在设备上进行私密设置。</p>
   </div>
 
   <p class="note">
-    📰 Featured on <a href="https://www.tomshardware.com/networking/clever-hacker-fits-537-000-domains-in-a-tiny-usd5-esp32-ad-blocking-dongle-firmware-uses-only-around-50kb-of-ram-and-can-answer-blocked-lookups-in-10-milliseconds">Tom's Hardware</a>,
-    <a href="https://www.xda-developers.com/this-tiny-esp32-powered-gadget-blocks-537000-domains-only-uses-50kb-of-ram/">XDA</a>, and
-    <a href="https://korben.info/en/half-million-ad-blocking-domains-50kb-ram-esp32.html">Korben</a>.
-    &nbsp;·&nbsp; Source + docs: <a href="https://github.com/M-Abozaid/esp32-c3-adblock">GitHub</a> (MIT).
+    📰 曾获 <a href="https://www.tomshardware.com/networking/clever-hacker-fits-537-000-domains-in-a-tiny-usd5-esp32-ad-blocking-dongle-firmware-uses-only-around-50kb-of-ram-and-can-answer-blocked-lookups-in-10-milliseconds">Tom's Hardware</a>、
+    <a href="https://www.xda-developers.com/this-tiny-esp32-powered-gadget-blocks-537000-domains-only-uses-50kb-of-ram/">XDA</a> 和
+    <a href="https://korben.info/en/half-million-ad-blocking-domains-50kb-ram-esp32.html">Korben</a> 报道。
+    &nbsp;·&nbsp; 源码 + 文档：<a href="https://github.com/M-Abozaid/esp32-c3-adblock">GitHub</a>（MIT）。
   </p>
 </div>
 </body>

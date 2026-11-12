@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""Preprocess hosts/domain blocklists into a sorted truncated-FNV-1a hash blob
-for the ESP32-C3 ad-blocker. Hashes live in flash and are binary-searched on the
-device, so no PSRAM is needed.
+"""把 hosts/域名拦截列表预处理成排序后的截断 FNV-1a 哈希数据块，
+供 ESP32-C3 广告拦截器使用。哈希存储在 flash 中并在设备上二分查找，
+因此无需 PSRAM。
 
-HASH_BYTES MUST match the firmware (src/main.cpp). 5 bytes (40-bit) keeps
-~0 collisions up to ~500k domains while fitting half a million in <3 MB.
+HASH_BYTES 必须与固件（src/main.cpp）一致。5 字节（40 位）在最多约 50 万
+域名时能保持约 0 碰撞，且能装下不到 3 MB 的 50 万个。
 
-Usage: build_blocklist.py [out.bin] [src ...]
-  src = local file or URL. With none given, downloads a balanced daily-driver set
-  (StevenBlack base + Hagezi Light) ~= 100k entries: blocks ads/trackers/malware
-  but leaves WhatsApp/Instagram/social/messaging working.
+用法：build_blocklist.py [out.bin] [src ...]
+  src = 本地文件或 URL。不指定时，下载一份均衡的日常驱动列表
+  （StevenBlack base + Hagezi Light）约 10 万条：拦截广告/追踪/恶意软件，
+  但保持 WhatsApp/Instagram/社交/通讯可用。
 
-  For the aggressive "test the limits" build (~500k, also blocks social/messaging):
+  想要激进的“测试极限”构建（约 50 万，也会拦截社交/通讯）：
     build_blocklist.py blocklist.bin \\
       https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling-porn-social/hosts \\
       https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/ultimate-onlydomains.txt
@@ -53,7 +53,7 @@ def norm(d: str) -> str:
 def read_source(src: str) -> str:
     if os.path.exists(src):
         return open(src, errors='ignore').read()
-    print(f'  downloading {src} ...', file=sys.stderr)
+    print(f'  正在下载 {src} ...', file=sys.stderr)
     return urllib.request.urlopen(src, timeout=180).read().decode('utf-8', 'ignore')
 
 def main():
@@ -71,7 +71,7 @@ def main():
         except Exception as e:
             # Fail loudly: silently dropping a source shrinks the list without anyone noticing
             # (happened when Hagezi retired domains/light.txt). Pass --allow-missing to continue.
-            print(f'  !! FAILED to read {src}: {e}', file=sys.stderr)
+            print(f'  !! 无法读取 {src}：{e}', file=sys.stderr)
             if not ALLOW_MISSING: sys.exit(1)
             continue
         for line in data.splitlines():
@@ -106,9 +106,9 @@ def main():
                     domains.add(d)
     if allow:
         before = len(domains); domains -= allow
-        print(f'allowlisted      : {before - len(domains):,} removed ({len(allow):,} @@ rules)', file=sys.stderr)
+        print(f'白名单           : 移除 {before - len(domains):,} 个（{len(allow):,} 条 @@ 规则）', file=sys.stderr)
     if skipped:
-        print(f'skipped rules    : {skipped:,} (adblock syntax that a DNS hash list cannot express)', file=sys.stderr)
+        print(f'跳过的规则       : {skipped:,}（DNS 哈希列表无法表达的 adblock 语法）', file=sys.stderr)
 
     hashes = sorted(fnv(d.encode()) for d in domains)
     collisions = len(hashes) - len(set(hashes))
@@ -118,11 +118,11 @@ def main():
             f.write(h.to_bytes(HASH_BYTES, 'little'))
 
     n, size = len(uniq), len(uniq) * HASH_BYTES
-    print(f'source domains   : {len(domains):,}')
-    print(f'hash entries     : {n:,}  ({HASH_BYTES}-byte / {HASH_BYTES*8}-bit)')
-    print(f'collisions       : {collisions}  (domains sharing a hash -> over-block)')
-    print(f'flash blob       : {size:,} bytes  ({size/1024/1024:.2f} MB)  -> {out}')
-    print(f'lookup           : ~{math.ceil(math.log2(max(n,2)))} reads/query')
+    print(f'源域名           : {len(domains):,}')
+    print(f'哈希条目         : {n:,}  （{HASH_BYTES} 字节 / {HASH_BYTES*8} 位）')
+    print(f'碰撞             : {collisions}  （共享同一哈希的域名 -> 被误拦截）')
+    print(f'flash 体积       : {size:,} 字节（{size/1024/1024:.2f} MB）-> {out}')
+    print(f'查询             : 每次查询约 {math.ceil(math.log2(max(n,2)))} 次读取')
 
 if __name__ == '__main__':
     main()

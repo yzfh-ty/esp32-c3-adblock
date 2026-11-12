@@ -1,15 +1,13 @@
 # esp32-c3-adblock
 
-[日本語 README](README_JP.md)
+本仓库是 **fork**，原作者/上游项目为 [M-Abozaid/esp32-c3-adblock](https://github.com/M-Abozaid/esp32-c3-adblock)。
 
-A **Pi-hole-style DNS ad-blocker** that runs on a **$2 ESP32-C3** — *no PSRAM required*.
-Also builds for the **ESP8266** (NodeMCU / D1 mini, 4 MB flash) — see [ESP8266 notes](#esp8266-notes).
+一个**类 Pi-hole 的 DNS 广告拦截器**，运行在 **2 美元的 ESP32-C3** 上——*无需 PSRAM*。
+同样支持 **ESP8266**（NodeMCU / D1 mini，4 MB flash）——见 [ESP8266 说明](#esp8266-notes)。
 
-> 📰 Featured on [Tom's Hardware](https://www.tomshardware.com/networking/clever-hacker-fits-537-000-domains-in-a-tiny-usd5-esp32-ad-blocking-dongle-firmware-uses-only-around-50kb-of-ram-and-can-answer-blocked-lookups-in-10-milliseconds), [XDA Developers](https://www.xda-developers.com/this-tiny-esp32-powered-gadget-blocks-537000-domains-only-uses-50kb-of-ram/), and [Korben](https://korben.info/en/half-million-ad-blocking-domains-50kb-ram-esp32.html).
+> 📰 曾获 [Tom's Hardware](https://www.tomshardware.com/networking/clever-hacker-fits-537-000-domains-in-a-tiny-usd5-esp32-ad-blocking-dongle-firmware-uses-only-around-50kb-of-ram-and-can-answer-blocked-lookups-in-10-milliseconds)、[XDA Developers](https://www.xda-developers.com/this-tiny-esp32-powered-gadget-blocks-537000-domains-only-uses-50kb-of-ram/) 和 [Korben](https://korben.info/en/half-million-ad-blocking-domains-50kb-ram-esp32.html) 报道。
 
-The trick everyone misses: you don't need to keep the blocklist in RAM. Store the
-domains as **sorted 40-bit hashes in flash** and binary-search them. 140,000+ domains
-fit in ~0.7 MB of flash and are matched in ~10 ms, using **~50 KB of RAM**.
+这里的关键技巧是：你不需要把拦截列表放进 RAM。把域名以**排序后的 40 位哈希**存储到 flash 中，然后用二分查找。140,000+ 域名只占约 0.7 MB 的 flash，匹配耗时约 10 ms，且仅用**约 50 KB RAM**。
 
 ```
 query in ──▶ extract domain ──▶ FNV-1a hash (+ parent suffixes)
@@ -18,114 +16,80 @@ query in ──▶ extract domain ──▶ FNV-1a hash (+ parent suffixes)
               └─ miss ──▶ forward to upstream resolver, relay the reply
 ```
 
-## Why this is interesting
+## 为什么值得关注
 
-Most ESP32 DNS sinkholes load the blocklist (domain *strings*) into RAM, so they
-demand PSRAM. This project stores fixed **5-byte (40-bit) hashes in flash** instead:
+大多数 ESP32 DNS 拦截器把拦截列表（域名字符串）加载到 RAM 中，因此需要 PSRAM。本项目改为在 flash 中存储固定的 **5 字节（40 位）哈希**：
 
-| | string-in-RAM approach | this (hash-in-flash) |
+| | 字符串进 RAM 方案 | 本方案（哈希进 flash） |
 |---|---|---|
-| Hardware | ESP32 + PSRAM (~$8) | ESP32-C3, no PSRAM (~$2) |
-| 141k domains | ~2.5 MB of RAM | **0.67 MB of flash** |
-| RAM used | most of it | **~50 KB** |
-| Lookup | string compare | ~18 flash reads (~10 ms incl. WiFi RTT) |
-| Collisions | n/a | 0 at 141k (1 at 537k) |
+| 硬件 | ESP32 + PSRAM（约 $8） | ESP32-C3，无 PSRAM（约 $2） |
+| 14.1 万域名 | 约 2.5 MB RAM | **0.67 MB flash** |
+| 占用的 RAM | 几乎全部 | **约 50 KB** |
+| 查询 | 字符串比较 | 约 18 次 flash 读取（约 10 ms，含 WiFi 往返） |
+| 碰撞 | 无 | 14.1 万时 0 个（53.7 万时 1 个） |
 
-**Why 40 bits?** It's the sweet spot for this flash budget. Collisions follow the
-birthday bound — at 141k domains you get ~0, at 537k about 1 (i.e. one unlucky
-domain gets over-blocked). Dropping to 32 bits would save 20% of the flash but
-cost ~7 collisions at 250k; going to 64 bits wastes 3 bytes per domain to solve
-a problem you don't have.
+**为什么是 40 位？** 这是这个 flash 容量下的最佳平衡点。碰撞遵循生日界限——14.1 万域名时约 0 个，53.7 万时约 1 个（即某个倒霉域名会被误拦截）。降到 32 位虽能省 20% 的 flash，但 25 万条时会产生约 7 次碰撞；升到 64 位每个域名多占 3 字节，去解决一个根本不存在的问题。
 
-The same trick works on bigger chips — it isn't a C3 workaround. On a 16 MB
-ESP32-S3 these hashes hold **~2.7M domains** vs ~466k for strings in 8 MB of
-PSRAM. Hashes in flash beat strings in PSRAM basically everywhere; the C3 just
-makes it undeniable.
+同样的技巧也适用于更大的芯片——它并非 C3 的权宜之计。在 16 MB 的 ESP32-S3 上，这些哈希可容纳 **约 270 万域名**，而 8 MB PSRAM 只装得下约 46.6 万个字符串域名。哈希进 flash 几乎在所有场合都优于字符串进 PSRAM；C3 只是把这个结论体现得最为彻底。
 
-## Hardware
+## 硬件
 
-- Any **ESP32-C3** board (tested on a C3 SuperMini), 4 MB flash, **no PSRAM needed**
-- Classic **ESP32** (DevKit / WROOM, 4 MB) also builds: `pio run -e esp32dev -t upload` and `pio run -e esp32dev -t uploadfs` (confirmed on real hardware in #40; the C3 is the main tested target). Its temperature reading is uncalibrated, so treat it as approximate.
-- **ESP8266** (NodeMCU / D1 mini / any ESP8266EX with 4 MB flash) also builds: `pio run -e esp8266 -t upload` — see [ESP8266 notes](#esp8266-notes) for what changes
-- Power it from a **stable USB source** (a phone charger or your router's USB port).
-  Cheap/loose USB-C→A adapters can brown out the radio during WiFi transmit.
-- A **USB-A → USB-C dongle** lets it plug straight into the spare USB port on the
-  back of most routers — no power supply, no extra box.
+- 任意 **ESP32-C3** 开发板（已在 C3 SuperMini 上测试），4 MB flash，**无需 PSRAM**
+- 经典 **ESP32**（DevKit / WROOM，4 MB）同样可构建：`pio run -e esp32dev -t upload` 和 `pio run -e esp32dev -t uploadfs`（已在真实硬件上验证，见 #40；C3 是主要测试目标）。其温度读数未经校准，仅供参考。
+- **ESP8266**（NodeMCU / D1 mini / 任意 4 MB flash 的 ESP8266EX）同样可构建：`pio run -e esp8266 -t upload`——不同点见 [ESP8266 说明](#esp8266-notes)
+- 使用**稳定的 USB 电源**（手机充电器或路由器的 USB 口）供电。廉价/松动的 USB-C→A 转接头可能在 WiFi 发射时造成电压跌落（brownout）。
+- 用 **USB-A → USB-C 转接头**可直接插入大多数路由器背面的空闲 USB 口——无需独立电源，无需额外盒子。
 
-### ESP8266 notes
+### ESP8266 说明
 
-The ESP8266 runs the blocker too — it never had PSRAM to begin with, and the whole
-blocklist lives in flash as 40-bit hashes either way. It is the slowest and most
-cramped target, but it is the cheapest board you can plug into a router.
+ESP8266 同样运行拦截器——它本就没有 PSRAM，拦截列表无论怎样都以 40 位哈希形式存在 flash 中。它是最慢、最局促的目标，但也是你能插进路由器的最便宜的板子。
 
 ```bash
 pio run -e esp8266 -t upload
 pio run -e esp8266 -t uploadfs
 ```
 
-What changes on the ESP8266 (the C3 and classic-ESP32 builds are untouched):
+在 ESP8266 上的不同点（C3 和经典 ESP32 构建不受影响）：
 
 | | ESP32-C3 | ESP8266 |
 |---|---|---|
-| Flash used | ~1.24 MB | ~0.50 MB of a 1,044,464-byte app slot |
-| Static RAM | 78 KB of 320 KB | 44 KB of 80 KB |
-| Flash index (`INDEX_ENTRIES`) | 4096 | 1024 |
-| Hash cache (`CACHE_SIZE`) | 256 | 64 |
-| Tracked clients / custom domains | 96 / 200 | 32 / 50 |
-| Client identification | IP + MAC (lwIP ARP table) | IP only (no ARP table exposed) |
-| Temperature reading | internal sensor | 0 °C (no sensor) |
-| Filesystem | 1.3 MB LittleFS | 1 MB LittleFS |
+| 占用 flash | 约 1.24 MB | 1,044,464 字节应用分区中的约 0.50 MB |
+| 静态 RAM | 320 KB 中的 78 KB | 80 KB 中的 44 KB |
+| Flash 索引（`INDEX_ENTRIES`） | 4096 | 1024 |
+| 哈希缓存（`CACHE_SIZE`） | 256 | 64 |
+| 追踪的客户端 / 自定义域名 | 96 / 200 | 32 / 50 |
+| 客户端识别 | IP + MAC（lwIP ARP 表） | 仅 IP（未暴露 ARP 表） |
+| 温度读取 | 内部传感器 | 0 °C（无传感器） |
+| 文件系统 | 1.3 MB LittleFS | 1 MB LittleFS |
 
-The smaller index still resolves the 112,556-domain default list with no misses: the
-widest bucket is 112 hashes, well inside the 256-hash scan window, so every stored
-hash stays reachable. If you load a much larger list, raise `INDEX_ENTRIES` and keep
-`MAX_RANGE >= ceil(domains / INDEX_ENTRIES)` — `inFlash()` clamps the bucket it scans
-to `MAX_RANGE`, so a too-small value silently misses hashes.
+较小的索引依然能无遗漏地解析 112,556 域名的默认列表：最宽的桶为 112 个哈希，完全落在 256 哈希的扫描窗口内，因此每个已存储的哈希都可被命中。如果你加载更大的列表，请提高 `INDEX_ENTRIES`，并保持 `MAX_RANGE >= ceil(domains / INDEX_ENTRIES)`——`inFlash()` 会把扫描的桶钳制到 `MAX_RANGE`，因此过小的值会静默地漏掉哈希。
 
-Two shims make it work: `src/prefs_shim.h` backs the ESP32's NVS `Preferences` API
-with the ESP8266's EEPROM, and `getMac()` is stubbed out (the ESP8266 exposes no ARP
-table). Firmware OTA stages the image in the free sketch space between the app and
-the filesystem, and the HTTPS blocklist fetch uses BearSSL (`setInsecure()`,
-`setBufferSizes(8192, 1024)`) instead of mbedTLS.
+两个垫片让它能工作：`src/prefs_shim.h` 把 ESP32 的 NVS `Preferences` API 用 ESP8266 的 EEPROM 实现，`getMac()` 被空实现替代（ESP8266 不暴露 ARP 表）。固件 OTA 把镜像暂存在应用与文件系统之间的空闲草图空间，HTTPS 拦截列表获取使用 BearSSL（`setInsecure()`、`setBufferSizes(8192, 1024)`）而非 mbedTLS。
 
-### Enclosure
+### 外壳
 
-A printable case for the C3 SuperMini: [`hardware/esp32-c3-supermini-enclosure.stl`](hardware/esp32-c3-supermini-enclosure.stl)
+为 C3 SuperMini 准备了可打印外壳：[`hardware/esp32-c3-supermini-enclosure.stl`](hardware/esp32-c3-supermini-enclosure.stl)
 
-Printing notes:
-- No supports needed; 0.2 mm layers, ~15% infill is plenty.
-- **Keep the antenna end clear.** The C3's PCB antenna is the zig-zag trace on the
-  short edge opposite the USB-C port — don't bury it in solid plastic or put metal
-  near it, or your RSSI will suffer.
-- Leave the vents open: the board idles around 45–55 °C.
+打印注意事项：
+- 无需支撑；0.2 mm 层高、约 15% 填充即可。
+- **保持天线端空旷。**C3 的 PCB 天线是 USB-C 口对侧短边上的锯齿状走线——不要把它埋进实心塑料里，也不要在它附近放金属，否则你的 RSSI（信号强度）会受损。
+- 保留通风口打开：板子待机温度约 45–55 °C。
 
-The C3 case does **not** fit an ESP8266 dev board (it is 44 × 25 mm, sized for
-the SuperMini footprint). For NodeMCU / D1 mini class boards use the parametric
-case: [`hardware/esp8266-enclosure.py`](hardware/esp8266-enclosure.py) writes the
-STL itself (no CAD tool needed), and
-[`hardware/esp8266-enclosure.scad`](hardware/esp8266-enclosure.scad) is the same
-geometry for OpenSCAD. Pre-generated for the 30 × 58 mm NodeMCU:
-[`hardware/esp8266-nodemcu-enclosure.stl`](hardware/esp8266-nodemcu-enclosure.stl)
+C3 外壳**不**适配 ESP8266 开发板（它是 44 × 25 mm，按 SuperMini 尺寸设计）。对于 NodeMCU / D1 mini 这类板子，请使用参数化外壳：[`hardware/esp8266-enclosure.py`](hardware/esp8266-enclosure.py) 直接生成 STL（无需 CAD 工具），[`hardware/esp8266-enclosure.scad`](hardware/esp8266-enclosure.scad) 是给 OpenSCAD 用的相同几何体。已为 30 × 58 mm 的 NodeMCU 预生成：[`hardware/esp8266-nodemcu-enclosure.stl`](hardware/esp8266-nodemcu-enclosure.stl)
 
-Measure the board first — width across the two header rows, and length from the
-USB end to the antenna end — then regenerate:
+先测量你的板子——两排排针之间的宽度，以及从 USB 端到天线端的长度——然后重新生成：
 
 ```
 python3 hardware/esp8266-enclosure.py --board-w 30 --board-l 58 --out case.stl
 ```
 
-It is a tray: the board drops in from the top, the side ribs catch the header
-strips, the end wall leaves a slot for the USB plug, and the antenna end is left
-open. Same printing notes as above.
+它是一个托盘式设计：板子从顶部放入，侧边凸筋卡住排针条，端壁为 USB 插头留出槽位，天线端保持开放。打印注意事项与上文相同。
 
-## Build & flash (PlatformIO)
+## 构建与烧录（PlatformIO）
 
-One USB flash to get going — after that, **firmware and blocklist both update over WiFi** (see below).
+只需一次 USB 烧录即可启动——之后**固件和拦截列表都能通过 WiFi 更新**（见下文）。
 
-> ⚠️ Use a **current PlatformIO** — the VSCode PlatformIO extension's bundled core, or
-> `pip install -U platformio` in a venv. The distro/apt `platformio` package (e.g. 4.3.4) is
-> too old and fails with `AttributeError: ... 'resultcallback'` (issue #4). The platform version is
-> pinned in `platformio.ini` (newer ones build the C3 image too big for the OTA slot).
+> ⚠️ 请使用**较新的 PlatformIO**——VSCode PlatformIO 扩展自带的核心，或在虚拟环境中 `pip install -U platformio`。发行版/apt 的 `platformio` 包（例如 4.3.4）太旧，会报 `AttributeError: ... 'resultcallback'`（issue #4）。平台版本已锁定在 `platformio.ini`（更新版本构建的 C3 镜像对 OTA 分区来说过大了）。
 
 ```bash
 # 1. copy the secrets template (gitignored, stays local) and edit it:
@@ -138,133 +102,75 @@ One USB flash to get going — after that, **firmware and blocklist both update 
 cp src/secrets.example.h src/secrets.h
 #    then edit src/secrets.h
 
-# 2. build the blocklist hash table (default = StevenBlack base + Hagezi Light,
-#    ~100k entries, WhatsApp/social safe)
+# 2. 构建拦截列表哈希表（默认 = StevenBlack base + Hagezi Light，
+#    约 10 万条，WhatsApp/社交应用不受影响）
 python3 tools/build_blocklist.py data/blocklist.bin
 
-# 3. flash firmware + the blocklist filesystem (the one and only USB flash)
+# 3. 烧录固件 + 拦截列表文件系统（唯一的一次 USB 烧录）
 pio run -t upload
-pio run -t uploadfs          # classic ESP32: add -e esp32dev to BOTH commands
+pio run -t uploadfs          # 经典 ESP32：两条命令都要加 -e esp32dev
 
-# 4. watch it boot, note the IP / open the dashboard
+# 4. 观察启动，记下 IP / 打开仪表盘
 pio device monitor          # -> http://c3adblock.local
 ```
 
-### Your own blocklists
+### 使用你自己的拦截列表
 
-`build_blocklist.py OUT.bin [SOURCE ...]` takes any mix of URLs and local files, in any of
-these formats:
+`build_blocklist.py OUT.bin [SOURCE ...]` 接受 URL 和本地文件的任意组合，支持以下格式：
 
-- **hosts files** — `0.0.0.0 ads.example.com tracker.example.com` (all domains on the line are included)
-- **plain domain lists** — one domain per line
-- **AdGuard / Adblock basic rules** — `||ads.example.com^` blocks, `@@||ok.example.com^`
-  removes a domain (e.g. to mirror an AdGuard Home allowlist)
+- **hosts 文件** — `0.0.0.0 ads.example.com tracker.example.com`（该行所有域名都会被包含）
+- **纯域名列表** — 每行一个域名
+- **AdGuard / Adblock 基础规则** — `||ads.example.com^` 拦截，`@@||ok.example.com^` 移除某个域名（例如用来镜像一个 AdGuard Home 白名单）
 
-A blocked domain also blocks its subdomains. Rules a DNS hash list can't express (regex,
-wildcards, `$` modifiers, cosmetic `##` rules) are skipped and counted. An `@@` rule only
-un-blocks that exact entry — it can't carve a subdomain out of a blocked parent. If a source
-can't be downloaded the build stops instead of silently producing a smaller list
-(`--allow-missing` to override).
+一个被拦截的域名也会拦截它的所有子域名。DNS 哈希列表无法表达的规则（正则、通配符、`$` 修饰符、`##` 美化规则）会被跳过并计数。`@@` 规则只解除那一个精确条目的拦截——它无法从被拦截的父域名中抠出某个子域名。如果某个源无法下载，构建会停止，而不会静默地生成一个更小的列表（可用 `--allow-missing` 覆盖）。
 
-### WiFi setup (no re-flash needed)
+### WiFi 设置（无需重新烧录）
 
-If it can't connect (or you never set `secrets.h`), it starts an open access point
-**`C3-AdBlock-XXXX`** with a captive portal — join it from a phone, pick your network,
-type the password, done. To move it to a new network later: click **Forget WiFi** on
-the dashboard, or hold the **BOOT** button while powering on, and the setup portal
-comes back. (`/forgetwifi` requires auth now, so it's no longer a bare URL you can
-just visit — see Security below.)
+如果它无法连接（或者你从未设置 `secrets.h`），它会启动一个带强制门户的开放接入点
+**`C3-AdBlock-XXXX`**——用手机连上它，选择你的网络，输入password，完成。之后想换网络：在仪表盘点 **忘记 WiFi**，或在开机时按住 **BOOT** 键，设置门户就会重新出现。（`/forgetwifi` 现在需要鉴权，所以它不再是一个能直接访问的裸 URL——见下方「安全」）
 
-Some C3 SuperMini boards have a poorly matched antenna and misbehave at full TX power
-(#50). The setup AP always runs at 8.5 dBm, and if the C3 can't join your WiFi at full
-power it retries once at 8.5 dBm. To pin a power level, build with e.g.
-`-DWIFI_TX_POWER=WIFI_POWER_8_5dBm` in `build_flags`.
+部分 C3 SuperMini 板子的天线匹配不佳，满发射功率下会异常（#50）。设置 AP 固定以 8.5 dBm 运行，如果 C3 在满功率下无法加入你的 WiFi，它会以 8.5 dBm 再重试一次。要固定功率等级，可在 `build_flags` 中加入例如 `-DWIFI_TX_POWER=WIFI_POWER_8_5dBm` 构建。
 
-## Over-the-air updates (no more USB)
+## 空中（OTA）更新（不再需要 USB）
 
-The dashboard at **http://c3adblock.local** does it all:
+仪表盘 **http://c3adblock.local** 就能完成所有操作：
 
-- **Blocklist** — drop a freshly built `blocklist.bin` into *Blocklist → Upload*, or set a
-  URL under *Remote auto-update* and the device pulls a prebuilt `blocklist.bin`
-  on a schedule. A fresh default list is rebuilt **every Monday** by GitHub Actions and
-  published at a stable URL, so pasting this once keeps a device current on its own:
+- **拦截列表** — 把新构建的 `blocklist.bin` 拖入 *拦截列表 → 上传*，或设置 *远程自动更新* 的 URL，设备会按计划拉取预生成的 `blocklist.bin`。GitHub Actions **每周一**自动重建一份新的默认列表并发布到稳定 URL，因此粘贴一次即可让设备自行保持最新：
   `https://github.com/M-Abozaid/esp32-c3-adblock/releases/download/blocklist/blocklist.bin`
-- **Firmware** — upload `.pio/build/c3/firmware.bin` under *Firmware → OTA update*; the
-  device verifies it and reboots into the new image. Or push over WiFi from the CLI:
+- **固件** — 在 *固件 → OTA 更新* 上传 `.pio/build/c3/firmware.bin`；设备会校验并重启进入新镜像。或者从命令行通过 WiFi 推送：
   ```bash
   pio run -t upload --upload-port c3adblock.local --upload-protocol espota
   ```
 
-**4 MB flash tradeoff:** firmware OTA needs *two* app slots, which leaves ~1.3 MB for the
-blocklist (**~250k domains max**). The aggressive 537k "ultimate" list only fits the
-single-app partition table (no firmware OTA). Pick your tradeoff in `partitions.csv`.
+**4 MB flash 的权衡：**固件 OTA 需要*两个*应用分区，这给拦截列表留下约 1.3 MB（**最多约 25 万域名**）。激进的 53.7 万 "ultimate" 列表只装得下单一应用分区表（无固件 OTA）。在 `partitions.csv` 中选择你的取舍。
 
-## Security
+## 安全
 
-The dashboard's read-only view (`/`, `/stats.json`) stays open, but every
-state-changing endpoint requires **HTTP Basic Auth** (`WEB_USER`/`WEB_PASS` from
-`secrets.h`):
+仪表盘的只读视图（`/`、`/stats.json`）保持开放，但每个改变状态的端点都要求 **HTTP 基本认证（Basic Auth）**（来自 `secrets.h` 的 `WEB_USER`/`WEB_PASS`）：
 
-- `/ban`, `/addblock`, `/unblock`, `/forgetwifi`
-- `/upload`, `/update` (blocklist and firmware OTA)
-- `/setupdate`, `/fetchnow`
+- `/ban`、`/addblock`、`/unblock`、`/forgetwifi`
+- `/upload`、`/update`（拦截列表和固件 OTA）
+- `/setupdate`、`/fetchnow`
 
-Network OTA (`ArduinoOTA`, e.g. `pio run -t upload --upload-port c3adblock.local
---upload-protocol espota`) requires `OTA_PASS` from the same file.
+网络 OTA（`ArduinoOTA`，例如 `pio run -t upload --upload-port c3adblock.local --upload-protocol espota`）需要同一个文件里的 `OTA_PASS`。
 
-Without this, anyone who could reach the device on the LAN could reflash it
-with arbitrary firmware or rewrite the blocklist with zero credentials — worth
-knowing given the device sits in the path of every DNS query on your network.
-Custom blocked-domain names are also HTML-escaped before being rendered on the
-dashboard, closing a stored-XSS path where a domain string containing markup
-(added via `/addblock`) would otherwise execute in the viewing browser.
+如果没有这些保护，任何能触达局域网内这台设备的人都能无需任何凭据就重新刷写任意固件或改写拦截列表——考虑到这台设备处于你网络上每条 DNS 查询的通路上，这一点值得注意。自定义的被拦截域名在渲染到仪表盘前也会先做 HTML 转义，封堵了一条存储型 XSS 通道——否则通过 `/addblock` 添加的包含标记的域名字符串会在查看者的浏览器中执行。
 
-**Basic Auth here is a LAN-trust-boundary control, not encryption.** Everything
-is plain HTTP on :80 — this chip has no realistic budget to run a TLS server.
-Basic Auth credentials are base64 (not encrypted) and sent on every authenticated
-request; anyone who can already sniff your LAN traffic (open/guest WiFi, ARP
-spoofing) can read them off the wire. This hardens against the common case —
-another device on your network hitting the API with no credentials at all, or a
-browser tab CSRF'ing it — not against an on-path network attacker.
+**这里的 Basic Auth 是局域网信任边界的管控手段，而不是加密。**所有内容都是 :80 端口上的明文 HTTP——这块芯片没有实际预算去运行 TLS 服务器。Basic Auth 凭据是 base64（非加密）并在每次已认证请求中发送；任何已经能嗅探你局域网流量的人（开放/访客 WiFi、ARP 欺骗）都能从线缆上读取它们。这加固了常见场景——你网络上的另一台设备不带任何凭据来打 API，或某个浏览器标签页对它的 CSRF——但无法抵御处于路径上的网络攻击者。
 
-**CSRF via cached Basic Auth:** browsers auto-attach cached Basic Auth
-credentials to *any* subsequent request to an already-authenticated origin —
-including one triggered by a totally unrelated page the same browser visits
-later (e.g. `<img src="http://c3adblock.local/forgetwifi">`, no JS required).
-That would let any webpage silently drive this API once you've logged into the
-dashboard once, regardless of who's on your LAN. Every mutating endpoint above
-now also requires a custom `X-Requested-With: c3-adblock` header, which a plain
-`<img>`/auto-submitted `<form>` CSRF can't attach (only same-origin `fetch()`
-can, which is what the dashboard's own JS does) — this is why `/forgetwifi` is
-no longer a bare URL you can visit directly; use the dashboard button instead.
+**CSRF 经由缓存的 Basic Auth：**浏览器会把缓存的 Basic Auth 凭据自动附加到对已认证源（origin）的*任意*后续请求——包括同一个浏览器之后访问的某个完全无关页面所触发的请求（例如 `<img src="http://c3adblock.local/forgetwifi">`，无需 JS）。这会让任何网页在你登录过一次仪表盘后，无论谁在局域网上，都能悄无声息地驱动这个 API。上面每个改变状态的端点现在也都要求一个自定义的 `X-Requested-With: c3-adblock` 请求头，普通的 `<img>`/自动提交的 `<form>` CSRF 无法附加它（只有同源的 `fetch()` 能附加，而这正是仪表盘自身 JS 的做法）——这就是为什么 `/forgetwifi` 不再是一个能直接访问的裸 URL；请改用仪表盘上的按钮。
 
-**Default credentials:** if `secrets.h` still has the placeholder
-`CHANGE_ME_WEB_PASSWORD` / `CHANGE_ME_OTA_PASSWORD` values from
-`secrets.example.h`, the device boots with a "password" that's public (it's
-sitting in this repo's example file). The firmware logs a warning over serial
-and shows a banner on the dashboard when this is the case — but it will still
-boot and run, so don't skip setting real values in `secrets.h` before trusting
-this on a network you don't fully control.
+**默认凭据：**如果 `secrets.h` 仍然保留 `secrets.example.h` 里的占位值 `CHANGE_ME_WEB_PASSWORD` / `CHANGE_ME_OTA_PASSWORD`，设备会带一个公开的「password」启动（它就在本仓库的示例文件里）。这种情况下固件会在串口记录一条警告，并在仪表盘上显示横幅——但它仍会启动运行，所以在你不完全信任的网络上使用前，请务必在 `secrets.h` 中设置真实值。
 
-Out of scope for now: the WiFi setup portal's access point (`C3-AdBlock-XXXX`)
-is still open (unencrypted) by design — it needs to be joinable without knowing
-a password first. The real WiFi password you type into the portal is only as
-safe as that local radio link during the brief setup window.
+目前不在范围内：WiFi 设置门户的接入点（`C3-AdBlock-XXXX`）按设计仍是开放的（无加密）——它需要在不知道password的情况下就能连接。你在门户里输入的真实 WiFi password 的安全性，只相当于那段短暂的设置窗口期内本地无线电链路的安全性。
 
-## Use it
+## 使用
 
-Point a device's DNS at the C3's IP, or add it as a **secondary resolver** behind
-your main DNS.
+把某个设备的 DNS 指向 C3 的 IP，或把它作为主 DNS 之后的**备用解析器**。
 
-**Upstream resolver:** allowed lookups go to Quad9 by default. You can change it under
-**UPSTREAM DNS** on the dashboard (presets, any IPv4, or "use router's DNS"). Keep a public
-resolver if this box is the *backup* for a Pi-hole/AdGuard your router hands out, because
-forwarding to it would fail exactly when the backup is needed. (From China, AliDNS
-`223.5.5.5` is much faster than Quad9; see #47.)
+**上游解析器：**放行的查询默认前往 Quad9。你可以在仪表盘的 **上游 DNS** 下更改它（预设值、任意 IPv4，或「使用路由器的 DNS」）。如果这台设备是路由器分发的 Pi-hole/AdGuard 的*备用*，请保持公共解析器，因为转发到它恰好在需要备用时失败。（在中国，AliDNS `223.5.5.5` 比 Quad9 快得多；见 #47。）
 
-**IPv6:** this resolver answers over IPv4. If your router also advertises an IPv6 DNS
-server (RDNSS/DHCPv6), devices may use that and bypass the blocker, so turn it off or point
-it elsewhere on the router.
+**IPv6：**这个解析器通过 IPv4 应答。如果你的路由器还通告了一个 IPv6 DNS 服务器（RDNSS/DHCPv6），设备可能会使用它从而绕过拦截器，因此请在路由器上将其关闭或指向别处。
 
 Test:
 
@@ -273,39 +179,34 @@ dig @<c3-ip> doubleclick.net   # -> 0.0.0.0  (blocked)
 dig @<c3-ip> github.com        # -> real IP  (forwarded)
 ```
 
-## Gotchas (learned the hard way)
+## 常见坑（血泪教训）
 
-- **ModemManager** (default on Fedora/Ubuntu) grabs `/dev/ttyACM0` and toggles
-  DTR/RTS, which **resets the C3** and blocks serial. Fix:
+- **ModemManager**（Fedora/Ubuntu 默认开启）会占用 `/dev/ttyACM0` 并翻转 DTR/RTS，这会**重置 C3** 并阻塞串口。解决方法：
   ```bash
   sudo systemctl stop ModemManager
   echo 'ATTRS{idVendor}=="303a", ENV{ID_MM_DEVICE_IGNORE}="1"' | sudo tee /etc/udev/rules.d/99-esp-no-modemmanager.rules
   sudo udevadm control --reload-rules && sudo udevadm trigger
   ```
-- The C3's USB-Serial-JTAG console can swallow early boot output until the host
-  connects (`while(!Serial)` helps).
-- DNS clients add an **EDNS OPT** record; a blocked reply must contain only the
-  question + answer (ANCOUNT=1, NSCOUNT=ARCOUNT=0) or it's malformed.
+- C3 的 USB-Serial-JTAG 控制台在主机连接之前可能会吞掉早期的启动输出（`while(!Serial)` 有帮助）。
+- DNS 客户端会添加一个 **EDNS OPT** 记录；被拦截的应答必须只包含问题 + 答案（ANCOUNT=1, NSCOUNT=ARCOUNT=0），否则会被视为畸形。
 
-## Done / how it could grow
+## 已完成 / 未来展望
 
-- ✅ Web dashboard — per-client block/allow counts, ban a client, add custom domains
-- ✅ mDNS (`c3adblock.local`) for discovery
-- ✅ OTA — firmware + blocklist update over WiFi, plus scheduled remote blocklist pulls
-- ✅ Captive-portal WiFi setup (no hardcoded creds)
-- ✅ Weekly blocklist release + validated updates (a bad download never replaces a working list)
-- ✅ Configurable upstream resolver
-- ⬜ One-click browser web-installer (built in `docs/`, needs hosting again)
-- ⬜ DNS answer cache + non-blocking forwarding (#40, #47)
-- ⬜ Smaller on-flash format (#3/#21): 3-byte suffixes, ~40% more domains per MB
-- ⬜ Act as the DHCP server (hand itself out as DNS) for true plug-and-play
+- ✅ Web 仪表盘——每个客户端的拦截/放行计数、封禁客户端、添加自定义域名
+- ✅ mDNS（`c3adblock.local`）用于发现
+- ✅ OTA——通过 WiFi 更新固件 + 拦截列表，以及按计划的远程拦截列表拉取
+- ✅ 强制门户 WiFi 配置（无硬编码凭据）
+- ✅ 每周拦截列表发布 + 通过校验的更新（一次坏下载绝不会替换掉可用的列表）
+- ✅ 可配置的上游解析器
+- ⬜ 一键浏览器网页刷写工具（构建于 `docs/`，需要重新托管）
+- ⬜ DNS 应答缓存 + 非阻塞转发（#40、#47）
+- ⬜ 更小的 flash 格式（#3/#21）：3 字节后缀，每 MB 约多 40% 域名
+- ⬜ 充当 DHCP 服务器（把自己作为 DNS 分发出去），实现真正的即插即用
 
-## Credits
+## 致谢
 
-Inspired by [s60sc/ESP32_AdBlocker](https://github.com/s60sc/ESP32_AdBlocker) — the
-"answer 0.0.0.0 for blocklisted domains" idea. This is an independent from-scratch
-implementation focused on the hash-in-flash optimization for PSRAM-less chips.
+灵感来自 [s60sc/ESP32_AdBlocker](https://github.com/s60sc/ESP32_AdBlocker)——「对被拦截的域名返回 0.0.0.0」的想法。这是一个独立实现的版本，专注于无 PSRAM 芯片上的哈希进 flash 优化。
 
-## License
+## 许可证
 
-MIT — see [LICENSE](LICENSE).
+MIT——见 [LICENSE](LICENSE)。
