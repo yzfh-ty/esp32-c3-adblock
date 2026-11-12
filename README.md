@@ -89,7 +89,7 @@ python3 hardware/esp8266-enclosure.py --board-w 30 --board-l 58 --out case.stl
 
 网页烧录入口在 `docs/index.html`。烧录组件已固定为本地中文版本，串口帮助、安装确认、擦除提示、进度和操作按钮均为中文；维护方式见 [`docs/vendor/esp-web-tools/README.md`](docs/vendor/esp-web-tools/README.md)。更新网页后刷新即可，无需重新烧录设备。浏览器自己的串口选择窗口使用浏览器设置的语言。
 
-网页已内置 **ESP32-C3 / 4 MB Flash 中文默认固件**及 138,121 条域名的拦截列表。点击“烧录默认固件”，选择串口，再点击“安装 C3 AdBlocker”并确认即可，无需编译或手动选择 `.bin` 文件。默认镜像使用 `src/secrets.example.h` 构建，不含个人 WiFi 凭据，烧录后通过热点配网。管理用户名为 `admin`，管理密码为 `CHANGE_ME_WEB_PASSWORD`，网络 OTA 密码为 `CHANGE_ME_OTA_PASSWORD`；这些是公开默认值，需要自定义密码时请按下方流程自行编译。
+网页已内置 **ESP32-C3 / 4 MB Flash 中文默认固件**及 138,121 条域名的拦截列表。点击“烧录默认固件”，选择串口，再点击“安装 C3 AdBlocker”并确认即可，无需编译或手动选择 `.bin` 文件。默认镜像使用 `src/secrets.example.h` 构建，不含个人 WiFi 凭据，烧录后通过热点配网。管理用户名为 `admin`，管理密码为 `123456`，网络 OTA 密码为 `123456`；这些是公开默认值，需要自定义密码时请按下方流程自行编译。
 
 不能直接双击 HTML 文件（`file://`）进行烧录。在项目目录运行以下命令，然后用桌面版 Chrome / Edge 打开 <http://127.0.0.1:8000/>。使用期间保持终端打开，结束后按 `Ctrl+C` 关闭服务。
 
@@ -170,7 +170,7 @@ pio device monitor          # -> http://c3adblock.local
 
 **CSRF 经由缓存的 Basic Auth：**浏览器会把缓存的 Basic Auth 凭据自动附加到对已认证源（origin）的*任意*后续请求——包括同一个浏览器之后访问的某个完全无关页面所触发的请求（例如 `<img src="http://c3adblock.local/forgetwifi">`，无需 JS）。这会让任何网页在你登录过一次仪表盘后，无论谁在局域网上，都能悄无声息地驱动这个 API。上面每个改变状态的端点现在也都要求一个自定义的 `X-Requested-With: c3-adblock` 请求头，普通的 `<img>`/自动提交的 `<form>` CSRF 无法附加它（只有同源的 `fetch()` 能附加，而这正是仪表盘自身 JS 的做法）——这就是为什么 `/forgetwifi` 不再是一个能直接访问的裸 URL；请改用仪表盘上的按钮。
 
-**默认凭据：**如果 `secrets.h` 仍然保留 `secrets.example.h` 里的占位值 `CHANGE_ME_WEB_PASSWORD` / `CHANGE_ME_OTA_PASSWORD`，设备会带一个公开的「password」启动（它就在本仓库的示例文件里）。这种情况下固件会在串口记录一条警告，并在仪表盘上显示横幅——但它仍会启动运行，所以在你不完全信任的网络上使用前，请务必在 `secrets.h` 中设置真实值。
+**默认凭据：**示例配置和网页默认固件的管理用户名为 `admin`，管理密码及网络 OTA 密码均为 `123456`。使用该默认密码（或旧版占位密码）时，固件会在串口和仪表盘提示正在使用公开默认值；需要自定义密码时，请修改 `src/secrets.h` 后重新编译。
 
 目前不在范围内：WiFi 设置门户的接入点（`C3-AdBlock-XXXX`）按设计仍是开放的（无加密）——它需要在不知道password的情况下就能连接。你在门户里输入的真实 WiFi password 的安全性，只相当于那段短暂的设置窗口期内本地无线电链路的安全性。
 

@@ -20,7 +20,7 @@ h2{font-size:14px;color:#8b949e;margin:18px 0 8px}
 </style></head><body>
 <header><h1>🛡️ C3 AdBlock <span id=host></span></h1></header><div class=wrap>
 <div id=credwarn style="display:none;background:#3b1d1d;border:1px solid #f85149;color:#ffb3ae;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px">
-⚠️ <b>正在使用默认密码。</b><code>secrets.h</code> 中的 WEB_PASS/OTA_PASS 仍是占位值——它们公开在仓库里，任何人都能读取。请设置真实密码后重新烧录。
+⚠️ <b>正在使用默认密码。</b><code>secrets.h</code> 中的 WEB_PASS/OTA_PASS 仍为公开默认值。需要自定义密码时，请修改配置后重新烧录。
 </div>
 <div id=blockbar style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:12px 14px;background:#161b22;border:1px solid #30363d;border-radius:8px">
 <span id=blockdot style=font-size:20px>🛡️</span><b id=blockstate style=flex:1 data-on=1>拦截运行中</b>

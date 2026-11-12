@@ -38,7 +38,7 @@
   <div class="card" style="text-align:center">
     <p style="margin-top:0">已内置 ESP32-C3 中文默认固件和拦截列表，无需选择固件文件。</p>
     <p class="note">适用于 4 MB Flash 的 ESP32-C3，包括 C3 SuperMini。连接开发板后，选择串口并确认安装即可。</p>
-    <esp-web-install-button manifest="./manifest.json">
+    <esp-web-install-button manifest="./manifest.json?v=1.0.0-zh.2">
       <button slot="activate" disabled style="font:600 17px system-ui;padding:14px 26px;border:0;border-radius:8px;background:#3fb950;color:#000">⚡ 烧录默认固件</button>
       <span slot="unsupported" class="unsupported">你的浏览器无法烧录——请在桌面上使用 <b>Chrome</b> 或 <b>Edge</b>。</span>
       <span slot="not-allowed" class="unsupported">请通过 HTTPS 或本机 localhost 地址打开此页面，才能使用串口烧录。</span>
@@ -67,7 +67,7 @@
     <p class="note">这个固件没有内置任何 WiFi 凭据——你在设备上进行私密设置。</p>
     <details class="note">
       <summary>默认固件的管理登录信息</summary>
-      <p>管理用户名为 <code>admin</code>，管理密码为 <code>CHANGE_ME_WEB_PASSWORD</code>，网络 OTA 密码为 <code>CHANGE_ME_OTA_PASSWORD</code>。这些是公开默认值，设备会提示正在使用默认密码；需要自定义密码时，请修改 <code>src/secrets.h</code> 后重新编译。</p>
+      <p>管理用户名为 <code>admin</code>，管理密码为 <code>123456</code>，网络 OTA 密码为 <code>123456</code>。这些是公开默认值，设备会提示正在使用默认密码；需要自定义密码时，请修改 <code>src/secrets.h</code> 后重新编译。</p>
     </details>
   </div>
 
